@@ -73,10 +73,10 @@ option(WITH_SWIGMAKE "helper tools to build python & MATLAB wrappers for C++ lib
 option(WITH_BULLET "used for collision detection" ON)
 option(WITH_LCM "interprocess communications protocol for visualizers, etc" ON)
 option(WITH_BOT_CORE_LCMTYPES "required LCM types library. only disable if you have it already." ON)
+option(WITH_DIRECTOR "vtk-based visualization tool and robot user interface" ON) # not win32 yet.  it builds on windows, but requires manually installation of vtk, etc.  perhaps make a precompiled director pod (a bit like snopt)
 if(WIN32)
   option(WITH_GTK "precompiled gtk binaries/headers for Windows" ON)  # needed for lcm on windows
 else()
-  option(WITH_DIRECTOR "vtk-based visualization tool and robot user interface" ON) # not win32 yet.  it builds on windows, but requires manually installation of vtk, etc.  perhaps make a precompiled director pod (a bit like snopt)
   option(WITH_LIBBOT "simple open-gl visualizer + lcmgl for director" ON) # there is hope, but i spent a long time cleaning up c/c++ language errors trying to make msvc happy.. and still had a long way to go.
   option(WITH_NLOPT "nonlinear optimization solver" ON)
   option(WITH_SWIG_MATLAB "A version of SWIG with MATLAB support" ON)
@@ -166,9 +166,13 @@ set(cmake_GIT_TAG abe1a22d0bb767423de4e3bd1123cc2deae1c82a)
 set(cmake_SOURCE_DIR "${PROJECT_SOURCE_DIR}/drake/cmake")
 set(cmake_NO_BUILD TRUE)
 set(cmake_IS_PUBLIC TRUE)
-set(director_GIT_REPOSITORY https://github.com/RobotLocomotion/director.git)
-set(director_GIT_TAG cfc7702bf9278707bca82d0393bba8611513ea15)
-set(director_BINARY_DIR ${PROJECT_SOURCE_DIR}/externals/director/distro/pods/drake-distro)
+set(director_GIT_REPOSITORY https://github.com/billhoffman/director.git)
+set(director_GIT_TAG 63c6274d61202278481c8105945959a4c6700f98)
+set(director_BUILD_SOURCE_DIR ${PROJECT_SOURCE_DIR}/externals/director/distro/superbuild)
+set(director_BINARY_DIR ${PROJECT_SOURCE_DIR}/externals/director-superbuild)
+set(director_ADDITIONAL_BUILD_ARGS INSTALL_COMMAND "${CMAKE_COMMAND}" -E echo)
+set(director_ADDITIONAL_CMAKE_CONFIGURE_ARGS -DUSE_SYSTEM_LCM=TRUE -DPYTHON_LIBRARY=C:/Anaconda2/libs/python27.lib -DUSE_EXTERNAL_INSTALL=TRUE -DUSE_LCM=TRUE)
+set(director_IS_CMAKE_POD TRUE)
 set(director_IS_PUBLIC TRUE)
 set(drake_java_args -DJava_JAVA_EXECUTABLE=${Java_JAVA_EXECUTABLE} -DJava_JAVAC_EXECUTABLE=${Java_JAVAC_EXECUTABLE} -DJava_JAVAH_EXECUTABLE=${Java_JAVAH_EXECUTABLE} -DJava_VERSION_STRING=${Java_VERSION_STRING})
 set(drake_ADDITIONAL_CMAKE_CONFIGURE_ARGS ${drake_java_args} -DWITH_PYTHON_3=${WITH_PYTHON_3} -DDISABLE_MATLAB=${DISABLE_MATLAB})
@@ -395,8 +399,13 @@ foreach(proj ${EXTERNAL_PROJECTS})
       if(CMAKE_VERBOSE_MAKEFILE)
         set(PODS_VERBOSE_MAKEFILE "-DCMAKE_VERBOSE_MAKEFILE=ON")
       endif()
+      if( DEFINED ${proj}_BUILD_SOURCE_DIR)
+        set(source_dir ${${proj}_BUILD_SOURCE_DIR})
+      else()
+        set(source_dir ${${proj}_SOURCE_DIR})
+      endif()
       ExternalProject_Add(${proj}
-        SOURCE_DIR ${${proj}_SOURCE_DIR}
+        SOURCE_DIR ${source_dir}
         DOWNLOAD_COMMAND ""
         UPDATE_COMMAND ""
         BINARY_DIR ${${proj}_BINARY_DIR}
